@@ -72,6 +72,7 @@ class Calendar(Frame):
         self.get_event()
 
     def get_event(self):
+        save_output = list()
         SCOPES = 'https://www.googleapis.com/auth/calendar.readonly'
         store = file.Storage('token.json')
         creds = store.get()
@@ -91,20 +92,20 @@ class Calendar(Frame):
         if not events:
             output ='No upcoming events found.'
         for event in events:
-            print(json.dumps(event, indent=2))
-            start = event['start'].get('dateTime', event['start'].get('date'))
-            #print(start)
-            #parsedDate = datetime.datetime.strptime(start, "%Y-%m-%dT%H:%M:%S")
-            parsedDate = dateutil.parser.parse(start)
-            output= parsedDate, event['summary']
-            #print(output)
-
+            start = event['start'].get('dateTime')
+            cut_time = start[:19]
+            save_time = datetime.datetime.strptime(cut_time, '%Y-%m-%dT%H:%M:%S')  # Converts list into a date object
+            new_time = datetime.datetime.strftime(save_time, '%d %b %H:%M %Y')  # Converts object into a string
+            event_of_name = event['summary']
+            output_event = event_of_name + ' ' + new_time
+            save_output.append(output_event)
 
         for widget in self.calenderEventContainer.winfo_children():
             widget.destroy()
 
-        calender_event = Event(self.calenderEventContainer, event_name=output)
-        calender_event.pack(side=TOP, anchor=E)
+        for show_events in save_output:
+            calender_event = Event(self.calenderEventContainer, event_name=show_events)
+            calender_event.pack(side=TOP, anchor=E)
 
         self.after(60000, self.get_event)
 
@@ -262,6 +263,7 @@ class Weather(Frame):
     def convert_kelvin_to_fahrenheit(kelvin_temp):
         return 1.8 * (kelvin_temp - 273) + 32
 
+
 class Time(Frame):
     def __init__(self, parent, *args, **kwargs):
         Frame.__init__(self, parent, bg='black')
@@ -337,13 +339,9 @@ class GUI:
         return 'break'
 
 
-
 def main():
     window = GUI()
     window.tk.mainloop()
-
-
-
 
 
 if __name__ == main():
