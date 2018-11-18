@@ -89,8 +89,6 @@ class Calendar(Frame):
                                               orderBy='startTime').execute()
         events = events_result.get('items', [])
 
-        if not events:
-            output ='No upcoming events found.'
         for event in events:
             start = event['start'].get('dateTime')
             cut_time = start[:19]
