@@ -130,15 +130,12 @@ class News(Frame):
     def get_headline(self):
         for widget in self.headlinecontainer.winfo_children():
             widget.destroy()
-        if news_country == None:
-            url_headline = 'https://news.google.com/news?ned=us&output=rss'
-        else:
-            url_headline = 'https://news.google.com/news?ned=%s&output=rss' % news_country
 
+        url_headline = 'https://api.20min.ch/rss/view/1'
         feed = feedparser.parse(url_headline)
 
         for post in feed.entries[0:5]:
-            headlines = NewsHeadLines (self.headlinecontainer, post.title)
+            headlines = NewsHeadLines(self.headlinecontainer, post.title)
             headlines.pack(side=TOP, anchor=W)
 
         self.after(600000, self.get_headline)
