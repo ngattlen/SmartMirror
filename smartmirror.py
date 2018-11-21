@@ -19,10 +19,10 @@ import dateutil.parser
 
 from contextlib import contextmanager
 
-ui_locale = 'de_CH.UTF-8'  # e.g. 'fr_FR' fro French, '' as default
+ui_locale = 'de_CH.UTF-8'
 news_country = 'CH'
-time_format = 12 # 12 or 24
-date_format = "%b %d, %Y" # check python doc for strftime() for options
+time_format = 12
+date_format = "%b %d, %Y"
 weather_api_token = '33e763a812916aecbb004eb5fd263ed2'
 weather_lang = 'de'
 weather_unit = 'auto'
@@ -34,7 +34,7 @@ medium_text_size = 28
 small_text_size = 18
 LOCALE_LOCK = threading.Lock()
 
-
+# These pictures are used to display the weather on the mirror
 icon_lookup = {
     'clear-day': "pics/Sun.png",  # clear sky day
     'wind': "pics/Wind.png",   #wind
@@ -52,7 +52,7 @@ icon_lookup = {
 }
 
 @contextmanager
-def setlocale(name): #thread proof function to work with locale
+def setlocale(name): # thread proof function to work with locale
     with LOCALE_LOCK:
         saved = locale.setlocale(locale.LC_ALL)
         try:
@@ -62,6 +62,10 @@ def setlocale(name): #thread proof function to work with locale
 
 
 class Calendar(Frame):
+    """
+    This Class is used to log on to Google and get the events from Google calendar.
+    """
+
     def __init__(self, parent, *args, **kwargs):
         Frame.__init__(self, parent, bg='black')
         self.title = 'Calendar Events'
@@ -72,6 +76,8 @@ class Calendar(Frame):
         self.get_event()
 
     def get_event(self):
+
+        # Authentication for Google Account
         save_output = list()
         SCOPES = 'https://www.googleapis.com/auth/calendar.readonly'
         store = file.Storage('token.json')
@@ -89,10 +95,11 @@ class Calendar(Frame):
                                               orderBy='startTime').execute()
         events = events_result.get('items', [])
 
+        # Changes time format
         for event in events:
             start = event['start'].get('dateTime')
             cut_time = start[:19]
-            save_time = datetime.datetime.strptime(cut_time, '%Y-%m-%dT%H:%M:%S')  # Converts list into a date object
+            save_time = datetime.datetime.strptime(cut_time, '%Y-%m-%dT%H:%M:%S')  # Converts string into a date object
             new_time = datetime.datetime.strftime(save_time, '%d %b %H:%M %Y')  # Converts object into a string
             event_of_name = event['summary']
             output_event = event_of_name + ' ' + new_time
@@ -109,6 +116,10 @@ class Calendar(Frame):
 
 
 class Event(Frame):
+    """
+    This Class displays the appointments on the mirror
+    """
+
     def __init__(self, parent, event_name=None):
         Frame.__init__(self, parent, bg='black')
         self.eventName = event_name
@@ -117,6 +128,9 @@ class Event(Frame):
 
 
 class News(Frame):
+    """
+    This class gets all the news information on the main page from 20 Minutes and displays it on the mirror.
+    """
     def __init__(self, parent, *args, **kwargs):
         Frame.__init__(self, parent, *args, **kwargs)
         self.config(bg='black')
@@ -127,6 +141,7 @@ class News(Frame):
         self.headlinecontainer.pack(side=TOP)
         self.get_headline()
 
+    # Gets news from 20 Minuten and using the feedparser module, parses the title of the news that we need.
     def get_headline(self):
         for widget in self.headlinecontainer.winfo_children():
             widget.destroy()
@@ -142,6 +157,9 @@ class News(Frame):
 
 
 class NewsHeadLines(Frame):
+    """
+    This Class is used to display a picture next to the news
+    """
     def __init__(self, parent, event_name=None):
         Frame.__init__(self, parent, bg='black')
 
@@ -160,6 +178,10 @@ class NewsHeadLines(Frame):
 
 
 class Weather(Frame):
+    """
+    This class gets weather data from DarkSkyNet using the REST API Interface and displays it on the mirror
+    """
+
     def __init__(self, parent, *args, **kwargs):
         Frame.__init__(self, parent, bg='black')
         self.temp = ''
@@ -182,31 +204,13 @@ class Weather(Frame):
         self.get_weatherinfo()
 
 
-    def get_ip(self):
-        try:
-            ip_url = 'http://jsonip.com/'
-            req = requests.get(ip_url)
-            ip_json = json.loads(req.text)
-            return ip_json['ip']
-        except Exception as e:
-            traceback.print_exc()
-            return 'Error: %s. Cannot get ip.' % e
-
+    # Gets weather infromation and uses the correct weather picture to display on the mirror.
     def get_weatherinfo(self):
-        if latitude is None and longitude is None:
-            req_location = 'http://freegeoip.net/json/%s' % self.get_ip()
-            r = requests.get(req_location)
-            location_object = json.loads(r.text)
 
-            lat = location_object['latitude']
-            lon = location_object['longitude']
-
-            location_two = "%s, %s" % (location_obj['city'], location_obj['region_code'])
-
-            req_weather = 'https://api.darksky.net/forecast/%s/%s,%s?lang=%s&units=%s' % (weather_api_token, lat,lon,weather_lang,weather_unit)
-        else:
-            location_two = ''
-            req_weather = 'https://api.darksky.net/forecast/%s/%s,%s?lang=%s&units=%s' % (weather_api_token, latitude, longitude, weather_lang, weather_unit)
+        location_two = ''
+        req_weather = 'https://api.darksky.net/forecast/%s/%s,%s?lang=%s&units=%s' % (weather_api_token, latitude,
+                                                                                      longitude, weather_lang,
+                                                                                      weather_unit)
 
         r = requests.get(req_weather)
         weather_object = json.loads(r.text)
@@ -254,12 +258,11 @@ class Weather(Frame):
 
         self.after(600000, self.get_weatherinfo)
 
-    @staticmethod
-    def convert_kelvin_to_fahrenheit(kelvin_temp):
-        return 1.8 * (kelvin_temp - 273) + 32
-
 
 class Time(Frame):
+    """
+    This Class displays the local time on the mirror
+    """
     def __init__(self, parent, *args, **kwargs):
         Frame.__init__(self, parent, bg='black')
         #Time Label
@@ -276,6 +279,7 @@ class Time(Frame):
         self.dateLabel.pack(side=TOP, anchor=E)
         self.exec_time()
 
+    # Gets local time from the system
     def exec_time(self):
         with setlocale(ui_locale):
             if time_format > 12:
@@ -299,6 +303,10 @@ class Time(Frame):
 
 
 class GUI:
+    """
+    This class is used to display all the information in a window and executes all the above methods to run the
+    program.
+    """
     def __init__(self):
         self.tk = Tk()
         self.tk.configure(background='black')
